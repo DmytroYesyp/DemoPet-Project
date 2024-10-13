@@ -69,6 +69,7 @@ public class UniversityService {
     }
 
     // Method to check if department exists
+
     private boolean checkIfDepartmentExists(String departmentName) {
         Optional<Department> department = departmentRepository.findByName(departmentName);
         return department.isPresent();
