@@ -1,100 +1,68 @@
 package com.uni.demo.controllers;
 
-import java.util.Optional;
-import java.util.Scanner;
-import java.util.regex.Pattern;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.uni.demo.models.Department;
-import com.uni.demo.repositories.DepartmentRepository;
 import com.uni.demo.services.UniversityService;
 
 @Component
 public class UniversityController {
     @Autowired
     private UniversityService universityService;
-    
-    @Autowired
-    private DepartmentRepository departmentRepository;
 
-    // Method to check if department exists
-    public String checkIfDepartmentExists(String departmentName) {
-        Optional<Department> department = departmentRepository.findByName(departmentName);
-        return department.isPresent() ? "Department exists: " + department.get().getName() : "Department does not exist.";
+    private enum ECommands {
+        HEAD_OF_DEPARTMENT,
+        SHOW_STATISTICS,
+        SHOW_AVERAGE_SALARY,
+        SHOW_EMPLOYEE_COUNT,
+        GLOBAL_SEARCH,
+        UNKNOWN_COMMAND
     }
 
-    public void run() {
-        try (Scanner scanner = new Scanner(System.in)) {
-            while (true) { // Infinite loop to keep prompting the user for input
-                System.out.println("Enter a command:");
-                String command = scanner.nextLine(); // Read the user's input
-
-                if (command.startsWith("Who is head of department")) { // Who is head of department {department_name}
-                    String departmentName = command.substring(25).trim(); // Extract the department name from the command
-                    
-                    // Check if department exists before proceeding
-                    String departmentCheck = checkIfDepartmentExists(departmentName);
-                    System.out.println(departmentCheck);
-                    if (departmentCheck.contains("does not exist")) {
-                        continue; // Skip further actions if department doesn't exist
-                    }
-                    
-                    String head = universityService.getHeadOfDepartment(departmentName);
-                    System.out.println(head.isEmpty() ? "No head of department found for " + departmentName : head);
-                } else if (command.startsWith("Show")) { // Handling different variations of the "Show" command
-                    if (command.endsWith("statistics")) { // Show {department_name} statistics
-                        String departmentName = command.substring(5, command.length() - 11).trim();
-                        String departmentCheck = checkIfDepartmentExists(departmentName);
-                        System.out.println(departmentCheck);
-                        if (departmentCheck.contains("does not exist")) {
-                            continue;
-                        }
-                        
-                        String statistics = universityService.getDepartmentStatistics(departmentName);
-                        System.out.println(statistics.isEmpty() ? "No statistics found for " + departmentName : statistics);
-                    } else if (command.contains("the average salary for the department")) { // Show the average salary for the department {department_name}
-                        String departmentName = command.substring(43).trim();
-                        String departmentCheck = checkIfDepartmentExists(departmentName);
-                        System.out.println(departmentCheck);
-                        if (departmentCheck.contains("does not exist")) {
-                            continue;
-                        }
-                        
-                        String salary = universityService.getAverageSalary(departmentName);
-                        System.out.println(salary.isEmpty() ? "No salary data found for " + departmentName : salary);
-                    } else if (command.contains("count of employee for")) { // Show count of employee for {department_name}
-                        String departmentName = command.substring(26).trim();
-                        String departmentCheck = checkIfDepartmentExists(departmentName);
-                        System.out.println(departmentCheck);
-                        if (departmentCheck.contains("does not exist")) {
-                            continue;
-                        }
-                        
-                        String employeeCount = universityService.getEmployeeCount(departmentName);
-                        System.out.println(employeeCount.isEmpty() ? "No employee data found for " + departmentName : employeeCount);
-                    }
-                } else if (command.startsWith("Global search by")) { // Global search by {template}
-                    String template = command.substring(16).trim();
-                    
-                    // Perform a case-insensitive search
-                    String searchResult = universityService.globalSearch(template);
-                    
-                    if (searchResult.isEmpty()) {
-                        System.out.println("No results found for '" + template + "'");
-                    } else {
-                        // Make the template bold
-                        String boldTemplate = "\033[1m" + template.toUpperCase() + "\033[0m";
-                        searchResult = searchResult.replaceAll("(?i)" + Pattern.quote(template), boldTemplate);
-                        System.out.println(searchResult);
-                    }
-                } else if (command.equalsIgnoreCase("exit")) {
-                    break; // Exit the loop and stop the program
-                } else {
-                    System.out.println("Unknown command"); // Unrecognized command
-                }
+    public void run(String command) {
+        switch (matchCommand(command)) {
+            case HEAD_OF_DEPARTMENT -> {
+                String head = universityService.getHeadOfDepartment(command);
+                System.out.println(head);
             }
+            case SHOW_STATISTICS -> {
+                String statistics = universityService.getDepartmentStatistics(command);
+                System.out.println(statistics);
+            }
+            case SHOW_AVERAGE_SALARY -> {
+                String salary = universityService.getAverageSalary(command);
+                System.out.println(salary);
+            }
+            case SHOW_EMPLOYEE_COUNT -> {
+                String employeeCount = universityService.getEmployeeCount(command);
+                System.out.println(employeeCount);
+            }
+            case GLOBAL_SEARCH -> {
+                String searchResult = universityService.globalSearch(command);
+                System.out.println(searchResult);
+            }
+            case UNKNOWN_COMMAND -> {
+                System.out.println("Unknown command");
+            }
+            default -> System.out.println("Unknown command");
         }
+    }
+    private ECommands matchCommand(String command){
+        if (command.startsWith("Who is head of department")) {
+            return ECommands.HEAD_OF_DEPARTMENT;
+        } else if (command.startsWith("Show")) {
+            if (command.endsWith("statistics")) {
+                return ECommands.SHOW_STATISTICS;
+            } else if (command.contains("the average salary for the department")) {
+                return ECommands.SHOW_AVERAGE_SALARY;
+            } else if (command.contains("count of employee for")) {
+                return ECommands.SHOW_EMPLOYEE_COUNT;
+            } else {
+                throw new IllegalArgumentException("Unrecognized 'Show' command: " + command);
+            }
+        } else if (command.startsWith("Global search by")) {
+            return ECommands.GLOBAL_SEARCH;
+        }
+        return ECommands.UNKNOWN_COMMAND;
     }
 }

@@ -1,5 +1,7 @@
 package com.uni.demo;
 
+import java.util.Scanner;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -16,9 +18,14 @@ public class DemoApplication implements CommandLineRunner {
     public static void main(String[] args) {
         SpringApplication.run(DemoApplication.class, args);
     }
-
     @Override
     public void run(String... args) throws Exception {
-        universityController.run();
-    }
+        try (Scanner scanner = new Scanner(System.in)) {
+            while (true) {
+                System.out.println("Enter a command:");
+                String command = scanner.nextLine();
+                universityController.run(command);
+            }
+        }
+    } 
 }
