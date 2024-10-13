@@ -42,6 +42,7 @@ public class UniversityService {
 
     public String getAverageSalary(String command) {
         String departmentName = extractName(command, "Show the average salary for the department");
+        handleDepartmentCheck(departmentName);
         Department department = departmentRepository.findByName(departmentName).orElseThrow();
         double averageSalary = department.getLectors().stream().mapToDouble(l -> l.getSalary().doubleValue()).average().orElse(0.0);
         return "The average salary of " + departmentName + " is " + averageSalary;
@@ -49,6 +50,7 @@ public class UniversityService {
 
     public String getEmployeeCount(String command) {
         String departmentName = extractName(command, "Show count of employee for");
+        handleDepartmentCheck(departmentName);
         Department department = departmentRepository.findByName(departmentName).orElseThrow();
         return String.valueOf(department.getLectors().size());
     }
@@ -67,7 +69,7 @@ public class UniversityService {
     }
 
     // Method to check if department exists
-    public boolean checkIfDepartmentExists(String departmentName) {
+    private boolean checkIfDepartmentExists(String departmentName) {
         Optional<Department> department = departmentRepository.findByName(departmentName);
         return department.isPresent();
     }
